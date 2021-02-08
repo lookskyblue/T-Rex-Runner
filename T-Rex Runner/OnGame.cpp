@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <vector>
 #include <random>
+#include "resource.h"
 #include "OnGame.h"
 
 enum OBJ_COOR { START_X = 100, START_Y = 200, END_X = 700, END_Y = 200 };
@@ -128,8 +129,8 @@ void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	MoveToEx(hMemDC, g_floor.GetStartCoordX(), g_floor.GetStartCoordY(), NULL);
 	LineTo(hMemDC, g_floor.GetEndCoordX(), g_floor.GetEndCoordY());
 
-	DinoBitMap = LoadBitmap(*hInst, MAKEINTRESOURCE(IDB_BITMAP1));
-	OldBitMap = (HBITMAP)SelectObject(hMemDC, DinoBitMap);
+	//DinoBitMap = LoadBitmap(*hInst, MAKEINTRESOURCE(Dino));
+	//OldBitMap = (HBITMAP)SelectObject(hMemDC, DinoBitMap);
 
 	for (size_t i = 0; i < g_floor_texture.capacity(); i++)
 	{
@@ -141,8 +142,6 @@ void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 		MoveToEx(hMemDC, startX, startY, NULL);
 		LineTo(hMemDC, startX + endX, endY);
 	}
-
-
 
 
 	SelectObject(hMemDC, OldBitMap);

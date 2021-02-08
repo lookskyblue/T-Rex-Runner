@@ -121,15 +121,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
-            HBITMAP OldBitMap;
+            HBITMAP DinoBitMap, OldBitMap;
             HDC hdc = BeginPaint(hWnd, &ps);
             HDC hMemDC;
             RECT crt;
 
             GetClientRect(hWnd, &crt);
             hMemDC = CreateCompatibleDC(hdc);
+
+            DinoBitMap = LoadBitmap(hInst, MAKEINTRESOURCE(Dino));
+            OldBitMap = (HBITMAP)SelectObject(hMemDC, DinoBitMap);
+            BitBlt(hdc, 100, 100, 100, 100, hMemDC, 0, 0, SRCCOPY);
+            
             OldBitMap = (HBITMAP)SelectObject(hMemDC, hBitMap);
-            BitBlt(hdc, 0, 0, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
+            BitBlt(hdc, 200, 0, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
+            
             SelectObject(hMemDC, OldBitMap);
             DeleteObject(OldBitMap);
             DeleteDC(hMemDC);
