@@ -8,6 +8,7 @@
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
+HBITMAP hBitMap;
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
@@ -82,7 +83,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+      550, 100, 850, 350, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -120,13 +121,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
+            HBITMAP OldBitMap;
             HDC hdc = BeginPaint(hWnd, &ps);
+            HDC hMemDC;
+            RECT crt;
+
+            GetClientRect(hWnd, &crt);
+            hMemDC = CreateCompatibleDC(hdc);
+            OldBitMap = (HBITMAP)SelectObject(hMemDC, hBitMap);
+            BitBlt(hdc, 0, 0, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
+            SelectObject(hMemDC, OldBitMap);
+            DeleteObject(OldBitMap);
+            DeleteDC(hMemDC);
+
             EndPaint(hWnd, &ps);
         }
         break;
 
     case WM_CREATE:
         OnCreate(hWnd);
+        break;
+
+    case WM_TIMER:
+        OnTimer(hWnd, &hBitMap, &hInst);
         break;
 
     case WM_DESTROY:

@@ -1,2 +1,4 @@
-﻿  T-Rex Runner.cpp
-  T-Rex Runner.vcxproj -> C:\Users\User\source\repos\T-Rex Runner\Debug\T-Rex Runner.exe
+﻿  OnGame.cpp
+C:\Users\우성\source\repos\포폴\WinApi\T-Rex Runner\T-Rex Runner\OnGame.cpp(131,34): error C2065: 'IDB_BITMAP1': 선언되지 않은 식별자입니다.
+  T-Rex Runner.cpp
+  코드를 생성하고 있습니다...
