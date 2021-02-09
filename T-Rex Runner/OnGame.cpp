@@ -1,10 +1,12 @@
 #include <Windows.h>
 #include <vector>
 #include <random>
+#include <chrono>
+#include <thread>
 #include "resource.h"
 #include "OnGame.h"
 
-enum OBJ_COOR { START_X = 100, START_Y = 200, END_X = 700, END_Y = 200 };
+enum OBJ_COOR { START_X = 100, START_Y = 00, END_X = 700, END_Y = 0 }; // y¿ø·¡ 200¾¿
 enum FLOOR_TEXTURE_INFO {OFFSET_Y=5, MAX_TEXTURE= 25};
 #define MOVE_SPEED 5
 #define FRAME_SPEED 5
@@ -93,6 +95,50 @@ void OnTimer(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	InvalidateRect(hWnd, nullptr, false);
 }
 
+void OnKeyDown(HWND hWnd, WPARAM wParam, int* g_y)
+{
+	switch (wParam)
+	{
+	case VK_UP:
+	{
+		SetTimer(hWnd, 1, 5, NULL);
+	}
+
+	default:
+		break;
+	}
+
+}
+
+void UpDino(HWND hWnd, WPARAM wParam, int* g_y)
+{
+	if (*g_y <= 50)
+	{
+		KillTimer(hWnd, wParam);
+
+		std::thread t([&hWnd]() { 
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			
+			SetTimer(hWnd, 2, 5, NULL);
+			});
+
+
+		t.detach();
+	}
+
+	else
+		*g_y -= 4;
+}
+
+void DownDino(HWND hWnd, WPARAM wParam, int* g_y)
+{
+	if (*g_y >= 135)
+		KillTimer(hWnd, wParam);
+
+	else
+		*g_y += 4;
+}
+
 void MoveObj()
 {
 	for (size_t i = 0; i < g_floor_texture.capacity(); i++)
@@ -112,7 +158,7 @@ void MoveObj()
 
 void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 {
-	HBITMAP DinoBitMap, OldBitMap;
+	HBITMAP OldBitMap;
 	HDC hdc, hMemDC;
 	RECT crt;
 

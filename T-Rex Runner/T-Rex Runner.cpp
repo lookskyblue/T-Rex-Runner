@@ -83,7 +83,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      550, 100, 850, 350, nullptr, nullptr, hInstance, nullptr);
+      550, 100, 950, 350, nullptr, nullptr, hInstance, nullptr); // 네번째 850였음
 
    if (!hWnd)
    {
@@ -96,6 +96,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
+int g_y = 135;
+HBITMAP DinoBitMap;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -118,26 +120,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+
+    case WM_KEYDOWN:
+        OnKeyDown(hWnd, wParam, &g_y);
+        break;
+
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
-            HBITMAP DinoBitMap, OldBitMap;
+            HBITMAP OldBitMap;
             HDC hdc = BeginPaint(hWnd, &ps);
             HDC hMemDC;
             RECT crt;
 
             GetClientRect(hWnd, &crt);
             hMemDC = CreateCompatibleDC(hdc);
-
             DinoBitMap = LoadBitmap(hInst, MAKEINTRESOURCE(Dino));
-            OldBitMap = (HBITMAP)SelectObject(hMemDC, DinoBitMap);
-            BitBlt(hdc, 100, 100, 100, 100, hMemDC, 0, 0, SRCCOPY);
-            
-            OldBitMap = (HBITMAP)SelectObject(hMemDC, hBitMap);
-            BitBlt(hdc, 200, 0, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
-            
+
+            FillRect(hdc, &crt, GetSysColorBrush(COLOR_WINDOW));
+
+            OldBitMap = (HBITMAP)SelectObject(hMemDC, hBitMap); // MAP
+            BitBlt(hdc, 0, 200, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
+
+            (HBITMAP)SelectObject(hMemDC, DinoBitMap); // DINO
+            BitBlt(hdc, 100, g_y, 65, 100, hMemDC, 0, 15, SRCCOPY);
+
+
             SelectObject(hMemDC, OldBitMap);
             DeleteObject(OldBitMap);
+            //DeleteObject(DinoBitMap);
             DeleteDC(hMemDC);
 
             EndPaint(hWnd, &ps);
@@ -149,7 +160,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_TIMER:
-        OnTimer(hWnd, &hBitMap, &hInst);
+    {
+        if (wParam == 0)
+            OnTimer(hWnd, &hBitMap, &hInst);
+
+        else if (wParam == 1)
+            UpDino(hWnd, wParam, &g_y);
+
+        else if (wParam == 2)
+            DownDino(hWnd, wParam, &g_y);
+    }
         break;
 
     case WM_DESTROY:
