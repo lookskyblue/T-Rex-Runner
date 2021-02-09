@@ -116,18 +116,26 @@ void UpDino(HWND hWnd, WPARAM wParam, int* g_y)
 	{
 		KillTimer(hWnd, wParam);
 
-		std::thread t([&hWnd]() { 
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-			
+		/*std::thread t([&hWnd]() { 
+			std::this_thread::sleep_for(std::chrono::nanoseconds(100));
 			SetTimer(hWnd, 2, 5, NULL);
 			});
 
 
-		t.detach();
+		t.detach();*/
+
+		SetTimer(hWnd, 2, 5, NULL);
 	}
 
 	else
-		*g_y -= 4;
+	{
+		if (*g_y <= 65)
+			*g_y -= 1;
+
+		else
+		*g_y -= 5;
+
+	}
 }
 
 void DownDino(HWND hWnd, WPARAM wParam, int* g_y)
@@ -136,7 +144,9 @@ void DownDino(HWND hWnd, WPARAM wParam, int* g_y)
 		KillTimer(hWnd, wParam);
 
 	else
-		*g_y += 4;
+	{
+		*g_y += 5;
+	}
 }
 
 void MoveObj()
