@@ -10,3 +10,4 @@ void DownDino(HWND, WPARAM);
 void CheckCollision(HWND);
 int GetDinoCoorY();
 void EndGame(HWND);
+void InitSetting(HWND);

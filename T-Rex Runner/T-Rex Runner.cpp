@@ -4,7 +4,7 @@
 #include "framework.h"
 #include "T-Rex Runner.h"
 #include "OnGame.h"
-
+#define AGAIN 0
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
@@ -158,12 +158,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_CREATE:
+        InitSetting(hWnd);
         OnCreate(hWnd, coor);
         break;
 
     case WM_TIMER:
     {
-
         if (wParam == 0)
             OnTimer(hWnd, &hBitMap, &hInst);
 
@@ -177,6 +177,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_DESTROY:
         PostQuitMessage(0);
+
         break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);

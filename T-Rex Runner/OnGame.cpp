@@ -13,7 +13,7 @@ enum DINO_COOR { DINO_START_X = 100, DINO_START_Y = 177, WIDTH  = 65, HEIGHT = 1
 
 #define MOVE_SPEED 5
 #define FRAME_SPEED 5
-
+#define AGAIN 0
 
 class GameObj {
 private:
@@ -41,6 +41,8 @@ public:
 		, mGame_progress_speed(gameSpeed)
 	{}
 
+	~GameObj() = default;
+
 	int GetGameSpeed() { return mGame_progress_speed; }
 	int GetStartCoordX() { return mStart_coord_x; }
 	int GetStartCoordY() { return mStart_coord_y; }
@@ -59,6 +61,8 @@ public:
 	Floor() = default;
 	Floor(int startX, int startY, int endX, int endY, int gameSpeed)
 		: GameObj(startX, startY,endX,endY, gameSpeed) {}
+
+	~Floor() = default;
 };
 
 class FloorTexture :public GameObj {
@@ -66,20 +70,27 @@ private:
 public:
 	FloorTexture(int startX, int startY, int endX, int endY, int gameSpeed)
 		: GameObj(startX, startY, endX, endY, gameSpeed) {}
+
+	~FloorTexture() = default;
 };
 
 class TRex : public GameObj {
 private:
 	int m_width;
 	int m_height;
+	bool isJumping;
 public:
 	TRex() = default;
 	TRex(int startX, int startY, int width, int height)
 		: GameObj(startX, startY)
 		, m_width(width)
 		, m_height(height)
+		, isJumping(false)
 	{}
+	~TRex() = default;
 
+	bool GetisJumping() { return isJumping; }
+	void SetisJumping(bool val) { isJumping = val; }
 };
 
 class Obstruction : public GameObj{
@@ -87,20 +98,29 @@ private:
 public:
 	Obstruction(int x, int y)
 		: GameObj(x, y) {}
+
+	~Obstruction() = default;
 };
 
 Floor g_floor;
 TRex g_dino;
+std::chrono::system_clock::time_point StartTime;
+std::chrono::system_clock::time_point EndTime;
+std::chrono::milliseconds elapsed_time;
+TCHAR ElapsedTime[20];
+
 std::vector<FloorTexture> g_floor_texture;
 std::vector<Obstruction> g_obs;
 std::random_device g_rd;
 std::mt19937 g_gen(g_rd());
-std::uniform_int_distribution<int> g_x_start_offset(0, OBJ_COOR::END_X - OBJ_COOR::START_X);
-std::uniform_int_distribution<int> g_x_end_offset(2, 6);
-std::uniform_int_distribution<int> g_y_offset(2, 7);
 
 void OnCreate(HWND hWnd, int* coor)
 {
+	StartTime = std::chrono::system_clock::now();
+	std::uniform_int_distribution<int> g_x_start_offset(0, OBJ_COOR::END_X - OBJ_COOR::START_X);
+	std::uniform_int_distribution<int> g_x_end_offset(2, 6);
+	std::uniform_int_distribution<int> g_y_offset(2, 7);
+
 	g_floor = Floor(OBJ_COOR::START_X, OBJ_COOR::START_Y, OBJ_COOR::END_X, OBJ_COOR::END_Y, FRAME_SPEED);
 	g_dino = TRex(DINO_COOR::DINO_START_X, DINO_COOR::DINO_START_Y, DINO_COOR::WIDTH, DINO_COOR::HEIGHT);
 	g_floor_texture.reserve(FLOOR_TEXTURE_INFO::MAX_TEXTURE);
@@ -128,6 +148,12 @@ void OnCreate(HWND hWnd, int* coor)
 	SetTimer(hWnd, 0, g_floor.GetGameSpeed(), NULL);
 }
 
+void InitSetting(HWND hWnd)
+{
+	g_floor_texture.erase(g_floor_texture.begin(), g_floor_texture.end());
+	g_obs.erase(g_obs.begin(), g_obs.end());
+}
+
 int GetDinoCoorY()
 {
 	return g_dino.GetStartCoordY();
@@ -141,12 +167,14 @@ void OnTimer(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	CheckCollision(hWnd);
 }
 
+void SaveScore();
+
 void CheckCollision(HWND hWnd)
 {
 	int nowX = DINO_COOR::DINO_START_X;
 	int nowY = g_dino.GetStartCoordY();
 
-	RECT dino_boundary = { nowX, nowY, nowX + DINO_COOR::WIDTH, nowY + DINO_COOR::HEIGHT };
+	RECT dino_boundary = { nowX, nowY, nowX + DINO_COOR::WIDTH-30, nowY + DINO_COOR::HEIGHT-25 };
 
 	for (size_t i = 0; i < g_obs.size(); i++)
 	{
@@ -157,15 +185,25 @@ void CheckCollision(HWND hWnd)
 		RECT temp{};
 
 		if (IntersectRect(&temp, &dino_boundary, &obs_boundary))
+		{
+			SaveScore();
 			EndGame(hWnd);
+		}
 	}
 }
 
 void EndGame(HWND hWnd)
 {
-	for (int i = 0; i < 3; i++)
-		KillTimer(hWnd, i);
+	KillTimer(hWnd, 0);
 
+	if (MessageBox(hWnd, L"Again?", L"T-Rex Runner", MB_YESNO | MB_ICONHAND)
+		== IDYES)
+	{
+		SendMessage(hWnd, WM_CREATE, AGAIN, NULL);
+	}
+
+	else
+		SendMessage(hWnd, WM_DESTROY, 0, 0);
 
 }
 
@@ -175,7 +213,15 @@ void OnKeyDown(HWND hWnd, WPARAM wParam, int* g_y)
 	{
 	case VK_UP:
 	{
-		SetTimer(hWnd, 1, 5, NULL);
+		bool isJumping = g_dino.GetisJumping();
+
+		if (isJumping == false)
+		{
+			g_dino.SetisJumping(true);
+
+			Beep(250, 20);
+			SetTimer(hWnd, 1, 5, NULL);
+		}
 	}
 
 	default:
@@ -201,7 +247,6 @@ void UpDino(HWND hWnd, WPARAM wParam)
 
 		else
 		g_dino.MoveUp(5);
-
 	}
 }
 
@@ -210,7 +255,10 @@ void DownDino(HWND hWnd, WPARAM wParam)
 	int coorY = g_dino.GetStartCoordY();
 
 	if (coorY >= 173)
+	{
 		KillTimer(hWnd, wParam);
+		g_dino.SetisJumping(false);
+	}
 
 	else
 	{
@@ -268,11 +316,14 @@ void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	hMemDC = CreateCompatibleDC(hdc);
 	OldBitMap = (HBITMAP)SelectObject(hMemDC, *hBitMap);
 
-	FillRect(hMemDC, &crt, GetSysColorBrush(COLOR_WINDOW));
+	FillRect(hMemDC, &crt, GetSysColorBrush(COLOR_WINDOW)); 
+	
+	// Floor
 	MoveToEx(hMemDC, g_floor.GetStartCoordX(), g_floor.GetStartCoordY(), NULL);
 	LineTo(hMemDC, g_floor.GetEndCoordX(), g_floor.GetEndCoordY());
 
-	for (size_t i = 0; i < g_floor_texture.capacity(); i++)
+	// Floor texture
+	for (size_t i = 0; i < g_floor_texture.size(); i++)
 	{
 		int startX = g_floor_texture[i].GetStartCoordX();
 		int startY = g_floor_texture[i].GetStartCoordY();
@@ -283,7 +334,8 @@ void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 		LineTo(hMemDC, startX + endX, endY);
 	}
 
-	for (size_t i = 0; i < g_obs.capacity(); i++) // Obstruction
+	// Obstructions
+	for (size_t i = 0; i < g_obs.size(); i++) // Obstruction
 	{
 		HBRUSH myBrush = (HBRUSH)CreateSolidBrush(RGB(0, 0, 0));
 		HBRUSH oldBrush = (HBRUSH)SelectObject(hMemDC, myBrush);
@@ -300,6 +352,11 @@ void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 
 		DeleteObject(myBrush);
 	}
+
+	EndTime = std::chrono::system_clock::now();
+	elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(EndTime - StartTime);
+	wsprintf(ElapsedTime, L"%d", elapsed_time.count()/100);
+	TextOut(hMemDC, OBJ_COOR::END_X - 50, OBJ_COOR::END_Y-120, ElapsedTime, lstrlen(ElapsedTime));
 
 	SelectObject(hMemDC, OldBitMap);
 	DeleteObject(OldBitMap);
