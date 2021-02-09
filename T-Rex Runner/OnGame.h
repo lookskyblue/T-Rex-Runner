@@ -1,9 +1,12 @@
 #pragma once
 
-void OnCreate(HWND hWnd);
-void OnTimer(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst);
+void OnCreate(HWND, int*);
+void OnTimer(HWND, HBITMAP*, HINSTANCE*);
 void MoveObj();
-void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst);
-void OnKeyDown(HWND hWnd, WPARAM wParam, int* g_y);
-void UpDino(HWND hWnd, WPARAM wParam, int* g_y);
-void DownDino(HWND hWnd, WPARAM wParam, int* g_y);
+void DrawObj(HWND, HBITMAP*, HINSTANCE*);
+void OnKeyDown(HWND, WPARAM, int*);
+void UpDino(HWND, WPARAM);
+void DownDino(HWND, WPARAM);
+void CheckCollision(HWND);
+int GetDinoCoorY();
+void EndGame(HWND);

@@ -96,8 +96,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-int g_y = 135;
+int g_y = 177;
 HBITMAP DinoBitMap;
+
+int coor[3];
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -140,11 +142,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             FillRect(hdc, &crt, GetSysColorBrush(COLOR_WINDOW));
 
             OldBitMap = (HBITMAP)SelectObject(hMemDC, hBitMap); // MAP
-            BitBlt(hdc, 0, 200, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
+            BitBlt(hdc, 0, 0, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
 
             (HBITMAP)SelectObject(hMemDC, DinoBitMap); // DINO
-            BitBlt(hdc, 100, g_y, 65, 100, hMemDC, 0, 15, SRCCOPY);
-
+            
+            BitBlt(hdc, coor[0], GetDinoCoorY(), coor[1], coor[2], hMemDC, 0, 15, SRCCOPY);
 
             SelectObject(hMemDC, OldBitMap);
             DeleteObject(OldBitMap);
@@ -156,19 +158,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_CREATE:
-        OnCreate(hWnd);
+        OnCreate(hWnd, coor);
         break;
 
     case WM_TIMER:
     {
+
         if (wParam == 0)
             OnTimer(hWnd, &hBitMap, &hInst);
 
         else if (wParam == 1)
-            UpDino(hWnd, wParam, &g_y);
+            UpDino(hWnd, wParam);
 
         else if (wParam == 2)
-            DownDino(hWnd, wParam, &g_y);
+            DownDino(hWnd, wParam);
     }
         break;
 
