@@ -354,11 +354,11 @@ void UpDino(HWND hWnd, WPARAM wParam)
 
 	else
 	{
-		if (coorY <= 90)
+		if (coorY <= 95)
 			g_dino.MoveUp(1);
 
 		else
-		g_dino.MoveUp(10);
+		g_dino.MoveUp(7);
 	}
 }
 
@@ -374,7 +374,7 @@ void DownDino(HWND hWnd, WPARAM wParam)
 
 	else
 	{
-		g_dino.MoveDown(10);
+		g_dino.MoveDown(6);
 	}
 }
 
