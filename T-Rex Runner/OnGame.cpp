@@ -167,7 +167,10 @@ void OnTimer(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	CheckCollision(hWnd);
 }
 
-void SaveScore();
+void SaveScore()
+{
+
+}
 
 void CheckCollision(HWND hWnd)
 {
