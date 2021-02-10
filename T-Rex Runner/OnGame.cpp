@@ -11,10 +11,12 @@
 
 enum OBJ_COOR { START_X = 100, START_Y = 250, END_X = 700, END_Y = 250 }; // y¿ø·¡ 200¾¿
 enum FLOOR_TEXTURE_INFO {OFFSET_Y=5, MAX_TEXTURE= 25};
-enum OBS_INFO { MAX_OBS = 2, OBS_OFFSET_X = 20, OBS_OFFSET_Y = 20 };
+enum OBS_INFO { MAX_OBS = 3, OBS_OFFSET_X = 20, OBS_OFFSET_Y = 20 };
 enum DINO_COOR { DINO_START_X = 100, DINO_START_Y = 177, WIDTH  = 65, HEIGHT = 100 };
 
-#define MOVE_SPEED 5
+#define SPEED_UP_NUMBER 3
+#define SPEED_UP_CALL_GAP 20000
+#define FIRST_MOVE_SPEED 5
 #define FRAME_SPEED 5
 #define AGAIN 0
 
@@ -46,15 +48,17 @@ public:
 
 	~GameObj() = default;
 
-	int GetGameSpeed() { return mGame_progress_speed; }
 	int GetStartCoordX() { return mStart_coord_x; }
 	int GetStartCoordY() { return mStart_coord_y; }
 	int GetEndCoordX() { return mEnd_coord_x; }
 	int GetEndCoordY() { return mEnd_coord_y; }
+	int GetGameSpeed() { return mGame_progress_speed; }
 	void MoveLeft(int x) { mStart_coord_x -= x; };
 	void MoveUp(int y) { mStart_coord_y -= y; };
 	void MoveDown(int y) { mStart_coord_y += y; };
 	void SetX(int x) { mStart_coord_x = x; }
+	void SetGameSpeed(int speed) { mGame_progress_speed = speed; }
+	void SpeedUp(int speed) { mGame_progress_speed += speed; }
 };
 
 class Floor : public GameObj{
@@ -122,56 +126,60 @@ TCHAR ElapsedTime[20];
 TCHAR BestScore[20];
 
 std::vector<FloorTexture> g_floor_texture;
-std::vector<Obstruction> g_obs;
+std::vector<Obstruction> g_obs_under;
 std::random_device g_rd;
 std::mt19937 g_gen(g_rd());
 
-void OnCreate(HWND hWnd, int* coor)
+void OnCreate(HWND hWnd)
 {
 	StartTime = std::chrono::system_clock::now();
-	std::uniform_int_distribution<int> g_x_start_offset(0, OBJ_COOR::END_X - OBJ_COOR::START_X);
-	std::uniform_int_distribution<int> g_x_end_offset(2, 6);
-	std::uniform_int_distribution<int> g_y_offset(2, 7);
+	std::uniform_int_distribution<int> obs_x_offset(0, 2000);
+	std::uniform_int_distribution<int> texture_end_x_offset(2, 6);
+	std::uniform_int_distribution<int> texture_start_x_offset(200,700);
+	std::uniform_int_distribution<int> texture_y_offset(2, 7);
 
 	g_floor = Floor(OBJ_COOR::START_X, OBJ_COOR::START_Y, OBJ_COOR::END_X, OBJ_COOR::END_Y, FRAME_SPEED);
 	g_dino = TRex(DINO_COOR::DINO_START_X, DINO_COOR::DINO_START_Y, DINO_COOR::WIDTH, DINO_COOR::HEIGHT);
 	g_floor_texture.reserve(FLOOR_TEXTURE_INFO::MAX_TEXTURE);
-	g_obs.reserve(OBS_INFO::MAX_OBS);
+	g_obs_under.reserve(OBS_INFO::MAX_OBS);
 
-	coor[0] = DINO_COOR::DINO_START_X;
-	coor[1] = DINO_COOR::WIDTH;
-	coor[2] = DINO_COOR::HEIGHT;
-
-	for (size_t i = 0; i < g_floor_texture.capacity(); i++)
+	for (size_t i = 0; i < g_floor_texture.capacity(); i++) // Floor Texture
 	{
-		int start_offset_x = g_x_start_offset(g_gen);
-		int end_offset_x = g_x_end_offset(g_gen);
+		int start_offset_x = texture_start_x_offset(g_gen);
+		int end_offset_x = texture_end_x_offset(g_gen);
 		int startX = OBJ_COOR::START_X + start_offset_x;
-		int y_offset = OBJ_COOR::START_Y + g_y_offset(g_gen);
+		int y_offset = OBJ_COOR::START_Y + texture_y_offset(g_gen);
 		
 		g_floor_texture.push_back(FloorTexture(startX, y_offset, end_offset_x, y_offset , FRAME_SPEED));
 	}
 
-	for (size_t i = 0; i < g_obs.capacity(); i++)
+	int gap = 0;
+
+	for (size_t i = 0; i < g_obs_under.capacity() - 1; i++) // Obstructions
 	{
-		g_obs.push_back(Obstruction(OBJ_COOR::END_X - OBS_INFO::OBS_OFFSET_X, OBJ_COOR::END_Y- OBS_INFO::OBS_OFFSET_Y));
+		g_obs_under.push_back(Obstruction(OBJ_COOR::END_X + gap, OBJ_COOR::END_Y- OBS_INFO::OBS_OFFSET_Y));
+		gap = obs_x_offset(g_gen) + OBJ_COOR::END_X;
 	}
+
+	g_obs_under.push_back(Obstruction(OBJ_COOR::END_X + gap, OBJ_COOR::END_Y - OBS_INFO::OBS_OFFSET_Y - 60));
 
 	LoadScore();
 	SetTimer(hWnd, 0, g_floor.GetGameSpeed(), NULL);
+	SetTimer(hWnd, SPEED_UP_NUMBER, SPEED_UP_CALL_GAP, NULL);
+
+	g_dino.SetGameSpeed(FIRST_MOVE_SPEED);
 }
 
 void InitSetting(HWND hWnd)
 {
 	g_floor_texture.erase(g_floor_texture.begin(), g_floor_texture.end());
-	g_obs.erase(g_obs.begin(), g_obs.end());
+	g_obs_under.erase(g_obs_under.begin(), g_obs_under.end());
 }
 
 int GetDinoCoorY()
 {
 	return g_dino.GetStartCoordY();
 }
-
 
 void OnTimer(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 {
@@ -234,16 +242,24 @@ void CheckCollision(HWND hWnd)
 	int nowY = g_dino.GetStartCoordY();
 
 	RECT dino_boundary = { nowX, nowY, nowX + DINO_COOR::WIDTH-30, nowY + DINO_COOR::HEIGHT-25 };
+	RECT dino_bend_boundary = { nowX, nowY+20, nowX + DINO_COOR::WIDTH + 25, nowY + DINO_COOR::HEIGHT - 20 };
 
-	for (size_t i = 0; i < g_obs.size(); i++)
+	for (size_t i = 0; i < g_obs_under.size(); i++)
 	{
-		int nowX = g_obs[i].GetStartCoordX();
-		int nowY = g_obs[i].GetStartCoordY();
+		int nowX = g_obs_under[i].GetStartCoordX();
+		int nowY = g_obs_under[i].GetStartCoordY();
 
 		RECT obs_boundary = { nowX, nowY, nowX + OBS_INFO::OBS_OFFSET_X, nowY + OBS_INFO::OBS_OFFSET_Y };
 		RECT temp{};
+		RECT* ptr_dino;
 
-		if (IntersectRect(&temp, &dino_boundary, &obs_boundary))
+		if (g_dino.GetisBending())
+			ptr_dino = &dino_bend_boundary;
+
+		else
+			ptr_dino = &dino_boundary;
+
+		if (IntersectRect(&temp, ptr_dino, &obs_boundary))
 		{
 			SaveScore();
 			EndGame(hWnd);
@@ -266,15 +282,43 @@ void EndGame(HWND hWnd)
 
 }
 
+bool isBending() { return g_dino.GetisBending(); }
+
+void DrawDino(HDC* hdc, HDC* hMemDC, HBITMAP* BitMapDino, HBITMAP* BitMapDinoBend)
+{
+	if (g_dino.GetisBending()) // Bend
+	{
+		SelectObject(*hMemDC, *BitMapDinoBend);
+		BitBlt(*hdc, DINO_COOR::DINO_START_X, g_dino.GetStartCoordY()+25, DINO_COOR::WIDTH + 25, DINO_COOR::HEIGHT-55
+		, *hMemDC, 0, 40, SRCCOPY);
+	}
+
+	else // No Bend
+	{
+		SelectObject(*hMemDC, *BitMapDino);
+		BitBlt(*hdc, DINO_COOR::DINO_START_X, g_dino.GetStartCoordY(), DINO_COOR::WIDTH, DINO_COOR::HEIGHT-30
+			, *hMemDC, 0, 15, SRCCOPY);
+	}
+}
+
+void OnKeyUp(HWND hWnd, WPARAM wParam)
+{
+	
+	if (g_dino.GetisJumping() == false && g_dino.GetisBending() == true && wParam==VK_DOWN)
+		g_dino.SetisBending(false);
+}
+
 void OnKeyDown(HWND hWnd, WPARAM wParam)
 {
 	switch (wParam)
 	{
 	case VK_UP:
+	case VK_SPACE:
 	{
 		bool isJumping = g_dino.GetisJumping();
+		bool isBending = g_dino.GetisBending();
 
-		if (isJumping == false)
+		if (isJumping == false && isBending == false)
 		{
 			g_dino.SetisJumping(true);
 
@@ -287,20 +331,15 @@ void OnKeyDown(HWND hWnd, WPARAM wParam)
 
 	case VK_DOWN:
 	{
-		if (GetAsyncKeyState(VK_DOWN) & 0x8000)
+		if (GetAsyncKeyState(VK_DOWN) && g_dino.GetisJumping() == false)
 			g_dino.SetisBending(true);
-
-		else if (GetAsyncKeyState(VK_DOWN) & 0x0001)
-			g_dino.SetisBending(false);
 
 		break;
 	}
-
 
 	default:
 		break;
 	}
-
 }
 
 void UpDino(HWND hWnd, WPARAM wParam)
@@ -319,7 +358,7 @@ void UpDino(HWND hWnd, WPARAM wParam)
 			g_dino.MoveUp(1);
 
 		else
-		g_dino.MoveUp(5);
+		g_dino.MoveUp(10);
 	}
 }
 
@@ -335,15 +374,15 @@ void DownDino(HWND hWnd, WPARAM wParam)
 
 	else
 	{
-		g_dino.MoveDown(5);
+		g_dino.MoveDown(10);
 	}
 }
 
 void MoveObj()
 {
-	std::uniform_int_distribution<int> send_obs_offset(200, 800);
+	std::uniform_int_distribution<int> send_obs_offset(100, 2500);
 
-	for (size_t i = 0; i < g_floor_texture.capacity(); i++)
+	for (size_t i = 0; i < g_floor_texture.capacity(); i++) // Move Floor Texture
 	{
 		int coorX = g_floor_texture[i].GetStartCoordX();
 
@@ -353,24 +392,25 @@ void MoveObj()
 			
 			continue;
 		}
-
-		g_floor_texture[i].MoveLeft(MOVE_SPEED);
+		g_floor_texture[i].MoveLeft(g_dino.GetGameSpeed());
 	}
 
-	for (size_t i = 0; i < g_obs.capacity(); i++)
+	for (size_t i = 0; i < g_obs_under.capacity(); i++) // Move Obstructions
 	{
-		int coorX = g_obs[i].GetStartCoordX();
+		int coorX = g_obs_under[i].GetStartCoordX();
+		int delay_obs = send_obs_offset(g_gen);
 
 		if (coorX <= OBJ_COOR::START_X)
 		{
-			
 			int distance = send_obs_offset(g_gen);
-			g_obs[i].SetX(OBJ_COOR::END_X+distance);
+
+			g_obs_under[i].SetX(OBJ_COOR::END_X + distance + delay_obs);
+			delay_obs = distance + 800;
 
 			continue;
 		}
 
-		g_obs[i].MoveLeft(MOVE_SPEED);
+		g_obs_under[i].MoveLeft(g_dino.GetGameSpeed());
 	}
 }
 
@@ -408,14 +448,13 @@ void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	}
 
 	// Obstructions
-	for (size_t i = 0; i < g_obs.size(); i++) // Obstruction
+	for (size_t i = 0; i < g_obs_under.size(); i++) // Obstruction
 	{
 		HBRUSH myBrush = (HBRUSH)CreateSolidBrush(RGB(0, 0, 0));
 		HBRUSH oldBrush = (HBRUSH)SelectObject(hMemDC, myBrush);
 
-		int startX = g_obs[i].GetStartCoordX();
-		int startY = g_obs[i].GetStartCoordY();
-
+		int startX = g_obs_under[i].GetStartCoordX();
+		int startY = g_obs_under[i].GetStartCoordY();
 
 		if (OBJ_COOR::START_X >= startX && startX + OBS_INFO::OBS_OFFSET_X >= OBJ_COOR::START_X)
 			Rectangle(hMemDC, OBJ_COOR::START_X, startY, startX + OBS_INFO::OBS_OFFSET_Y, startY + OBS_INFO::OBS_OFFSET_Y);
@@ -436,4 +475,9 @@ void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	DeleteObject(OldBitMap);
 	DeleteDC(hMemDC);
 	ReleaseDC(hWnd, hdc);
+}
+
+void SpeedUp()
+{
+	g_dino.SpeedUp(1);
 }

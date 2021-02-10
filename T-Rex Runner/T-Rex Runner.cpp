@@ -6,6 +6,7 @@
 #include "OnGame.h"
 #define AGAIN 0
 #define MAX_LOADSTRING 100
+#define SPEED_UP_NUMBER 3
 
 // 전역 변수:
 HBITMAP hBitMap;
@@ -99,69 +100,67 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 HBITMAP DinoBitMap;
 HBITMAP DinoBitMapBend;
 
-int coor[3];
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
     case WM_COMMAND:
+    {
+        int wmId = LOWORD(wParam);
+        // 메뉴 선택을 구문 분석합니다:
+        switch (wmId)
         {
-            int wmId = LOWORD(wParam);
-            // 메뉴 선택을 구문 분석합니다:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
+        case IDM_ABOUT:
+            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+            break;
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
         }
-        break;
+    }
+    break;
 
     case WM_KEYDOWN:
         OnKeyDown(hWnd, wParam);
         break;
 
+    case WM_KEYUP:
+        OnKeyUp(hWnd, wParam);
+        break;
 
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HBITMAP OldBitMap;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            HDC hMemDC;
-            RECT crt;
+    {
+        PAINTSTRUCT ps;
+        HBITMAP OldBitMap;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        HDC hMemDC;
+        RECT crt;
 
-            GetClientRect(hWnd, &crt);
-            hMemDC = CreateCompatibleDC(hdc);
-            DinoBitMap = LoadBitmap(hInst, MAKEINTRESOURCE(Dino));
-            DinoBitMapBend = LoadBitmap(hInst, MAKEINTRESOURCE(DinoBend));
+        GetClientRect(hWnd, &crt);
+        hMemDC = CreateCompatibleDC(hdc);
+        DinoBitMap = LoadBitmap(hInst, MAKEINTRESOURCE(Dino));
+        DinoBitMapBend = LoadBitmap(hInst, MAKEINTRESOURCE(DinoBend));
 
-            //FillRect(hdc, &crt, GetSysColorBrush(COLOR_WINDOW));
+        OldBitMap = (HBITMAP)SelectObject(hMemDC, hBitMap); // MAP
+        BitBlt(hdc, 0, 0, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
 
-            OldBitMap = (HBITMAP)SelectObject(hMemDC, hBitMap); // MAP
-            BitBlt(hdc, 0, 0, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
+        DrawDino(&hdc, &hMemDC, &DinoBitMap, &DinoBitMapBend); // DINO
 
-            (HBITMAP)SelectObject(hMemDC, DinoBitMap); // DINO
-            
-            BitBlt(hdc, coor[0], GetDinoCoorY(), coor[1], coor[2], hMemDC, 0, 15, SRCCOPY);
+        SelectObject(hMemDC, OldBitMap);
+        DeleteObject(OldBitMap);
+        DeleteObject(DinoBitMap);
+        DeleteObject(DinoBitMapBend);
+        DeleteDC(hMemDC);
 
-            SelectObject(hMemDC, OldBitMap);
-            DeleteObject(OldBitMap);
-            //DeleteObject(DinoBitMap);
-            DeleteDC(hMemDC);
-
-            EndPaint(hWnd, &ps);
-        }
-        break;
+        EndPaint(hWnd, &ps);
+    }
+    break;
 
     case WM_CREATE:
         InitSetting(hWnd);
-        OnCreate(hWnd, coor);
+        OnCreate(hWnd);
         break;
 
     case WM_TIMER:
@@ -174,8 +173,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         else if (wParam == 2)
             DownDino(hWnd, wParam);
+
+        else if (wParam == SPEED_UP_NUMBER)
+            SpeedUp();
     }
-        break;
+    break;
 
     case WM_DESTROY:
         PostQuitMessage(0);
