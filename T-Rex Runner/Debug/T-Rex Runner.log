@@ -4,4 +4,5 @@ C:\Users\User\source\repos\T-Rex Runner\T-Rex Runner\OnGame.cpp(187,16): warning
           [
               _Rep=__int64
           ]
+C:\Users\User\source\repos\T-Rex Runner\T-Rex Runner\OnGame.cpp(214,26): warning C4101: 'e' :참조되지 않은 지역 변수입니다.
   T-Rex Runner.vcxproj -> C:\Users\User\source\repos\T-Rex Runner\Debug\T-Rex Runner.exe

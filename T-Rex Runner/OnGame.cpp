@@ -206,20 +206,28 @@ void LoadScore()
 
 		std::string tmp;
 		std::getline(readFile, tmp);
+		int bestScore = 0;
+
+		try {
+			bestScore = stoi(tmp);
+		}
+		catch (std::exception& e) {
+			wsprintfW(BestScore, L"HI Error");
+			readFile.close();
+
+			return;
+		}
 
 
-		int bestScore = stoi(tmp);
-
-
-		if (isdigit(bestScore) != 0)
+		//if (isdigit(bestScore) != 0)
 		{
 			g_dino.SetBestScore(bestScore);
 			wsprintfW(BestScore, L"HI %d", bestScore);
 		}
 
-		else
+		/*else
 			wsprintfW(BestScore, L"Error");
-		
+		*/
 		readFile.close();
 	}
 }
