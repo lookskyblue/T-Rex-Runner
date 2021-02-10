@@ -96,8 +96,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-int g_y = 177;
 HBITMAP DinoBitMap;
+HBITMAP DinoBitMapBend;
 
 int coor[3];
 
@@ -124,8 +124,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_KEYDOWN:
-        OnKeyDown(hWnd, wParam, &g_y);
+        OnKeyDown(hWnd, wParam);
         break;
+
 
     case WM_PAINT:
         {
@@ -138,8 +139,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             GetClientRect(hWnd, &crt);
             hMemDC = CreateCompatibleDC(hdc);
             DinoBitMap = LoadBitmap(hInst, MAKEINTRESOURCE(Dino));
+            DinoBitMapBend = LoadBitmap(hInst, MAKEINTRESOURCE(DinoBend));
 
-            FillRect(hdc, &crt, GetSysColorBrush(COLOR_WINDOW));
+            //FillRect(hdc, &crt, GetSysColorBrush(COLOR_WINDOW));
 
             OldBitMap = (HBITMAP)SelectObject(hMemDC, hBitMap); // MAP
             BitBlt(hdc, 0, 0, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);

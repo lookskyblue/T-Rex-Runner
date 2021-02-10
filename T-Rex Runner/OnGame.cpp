@@ -1,8 +1,11 @@
 #include <Windows.h>
+#include <fstream>
 #include <vector>
 #include <random>
 #include <chrono>
 #include <thread>
+#include <string>
+#include <iostream>
 #include "resource.h"
 #include "OnGame.h"
 
@@ -78,7 +81,9 @@ class TRex : public GameObj {
 private:
 	int m_width;
 	int m_height;
+	int m_best_score;
 	bool isJumping;
+	bool isBending;
 public:
 	TRex() = default;
 	TRex(int startX, int startY, int width, int height)
@@ -86,11 +91,17 @@ public:
 		, m_width(width)
 		, m_height(height)
 		, isJumping(false)
+		, isBending(false)
+		, m_best_score(0)
 	{}
 	~TRex() = default;
 
 	bool GetisJumping() { return isJumping; }
 	void SetisJumping(bool val) { isJumping = val; }
+	bool GetisBending() { return isBending; }
+	void SetisBending(bool val) { isBending = val; }
+	int GetBestScore() { return m_best_score; }
+	void SetBestScore(int score) { m_best_score = score; }
 };
 
 class Obstruction : public GameObj{
@@ -108,6 +119,7 @@ std::chrono::system_clock::time_point StartTime;
 std::chrono::system_clock::time_point EndTime;
 std::chrono::milliseconds elapsed_time;
 TCHAR ElapsedTime[20];
+TCHAR BestScore[20];
 
 std::vector<FloorTexture> g_floor_texture;
 std::vector<Obstruction> g_obs;
@@ -145,6 +157,7 @@ void OnCreate(HWND hWnd, int* coor)
 		g_obs.push_back(Obstruction(OBJ_COOR::END_X - OBS_INFO::OBS_OFFSET_X, OBJ_COOR::END_Y- OBS_INFO::OBS_OFFSET_Y));
 	}
 
+	LoadScore();
 	SetTimer(hWnd, 0, g_floor.GetGameSpeed(), NULL);
 }
 
@@ -159,6 +172,7 @@ int GetDinoCoorY()
 	return g_dino.GetStartCoordY();
 }
 
+
 void OnTimer(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 {
 	MoveObj();
@@ -169,7 +183,49 @@ void OnTimer(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 
 void SaveScore()
 {
+	std::ofstream writeFile;
+	int nowScore = elapsed_time.count() / 100;
+	int GetScore = g_dino.GetBestScore();
 
+	if (nowScore <= GetScore)
+		return;
+
+	writeFile.open("score.txt");
+
+	if (writeFile.is_open())
+	{
+		std::string str = std::to_string(nowScore);
+		writeFile.write(str.c_str(), str.size());
+		writeFile.close();
+	}
+}
+
+void LoadScore()
+{
+	std::ifstream readFile;
+	readFile.open("score.txt");
+
+	if (readFile.is_open())
+	{
+		std::string tmp;
+		std::getline(readFile, tmp);
+		int bestScore = 0;
+
+		try {
+			bestScore = stoi(tmp);
+		}
+		catch (std::exception& e) {
+			wsprintfW(BestScore, L"HI -");
+			readFile.close();
+
+			return;
+		}
+
+		g_dino.SetBestScore(bestScore);
+		wsprintfW(BestScore, L"HI %d", bestScore);
+
+		readFile.close();
+	}
 }
 
 void CheckCollision(HWND hWnd)
@@ -210,7 +266,7 @@ void EndGame(HWND hWnd)
 
 }
 
-void OnKeyDown(HWND hWnd, WPARAM wParam, int* g_y)
+void OnKeyDown(HWND hWnd, WPARAM wParam)
 {
 	switch (wParam)
 	{
@@ -225,7 +281,21 @@ void OnKeyDown(HWND hWnd, WPARAM wParam, int* g_y)
 			Beep(250, 20);
 			SetTimer(hWnd, 1, 5, NULL);
 		}
+
+		break;
 	}
+
+	case VK_DOWN:
+	{
+		if (GetAsyncKeyState(VK_DOWN) & 0x8000)
+			g_dino.SetisBending(true);
+
+		else if (GetAsyncKeyState(VK_DOWN) & 0x0001)
+			g_dino.SetisBending(false);
+
+		break;
+	}
+
 
 	default:
 		break;
@@ -360,6 +430,7 @@ void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(EndTime - StartTime);
 	wsprintf(ElapsedTime, L"%d", elapsed_time.count()/100);
 	TextOut(hMemDC, OBJ_COOR::END_X - 50, OBJ_COOR::END_Y-120, ElapsedTime, lstrlen(ElapsedTime));
+	TextOut(hMemDC, OBJ_COOR::END_X - 150, OBJ_COOR::END_Y-120, BestScore, lstrlen(BestScore));
 
 	SelectObject(hMemDC, OldBitMap);
 	DeleteObject(OldBitMap);
