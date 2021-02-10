@@ -11,3 +11,5 @@ void CheckCollision(HWND);
 int GetDinoCoorY();
 void EndGame(HWND);
 void InitSetting(HWND);
+void SaveScore();
+void LoadScore();

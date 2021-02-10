@@ -1,8 +1,11 @@
 #include <Windows.h>
+#include <fstream>
 #include <vector>
 #include <random>
 #include <chrono>
 #include <thread>
+#include <string>
+#include <iostream>
 #include "resource.h"
 #include "OnGame.h"
 
@@ -78,6 +81,7 @@ class TRex : public GameObj {
 private:
 	int m_width;
 	int m_height;
+	int m_best_score;
 	bool isJumping;
 public:
 	TRex() = default;
@@ -86,11 +90,14 @@ public:
 		, m_width(width)
 		, m_height(height)
 		, isJumping(false)
+		, m_best_score(0)
 	{}
 	~TRex() = default;
 
 	bool GetisJumping() { return isJumping; }
 	void SetisJumping(bool val) { isJumping = val; }
+	int GetBestScore() { return m_best_score; }
+	void SetBestScore(int score) { m_best_score = score; }
 };
 
 class Obstruction : public GameObj{
@@ -108,6 +115,7 @@ std::chrono::system_clock::time_point StartTime;
 std::chrono::system_clock::time_point EndTime;
 std::chrono::milliseconds elapsed_time;
 TCHAR ElapsedTime[20];
+TCHAR BestScore[20];
 
 std::vector<FloorTexture> g_floor_texture;
 std::vector<Obstruction> g_obs;
@@ -145,6 +153,7 @@ void OnCreate(HWND hWnd, int* coor)
 		g_obs.push_back(Obstruction(OBJ_COOR::END_X - OBS_INFO::OBS_OFFSET_X, OBJ_COOR::END_Y- OBS_INFO::OBS_OFFSET_Y));
 	}
 
+	LoadScore();
 	SetTimer(hWnd, 0, g_floor.GetGameSpeed(), NULL);
 }
 
@@ -167,7 +176,53 @@ void OnTimer(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	CheckCollision(hWnd);
 }
 
-void SaveScore();
+void SaveScore()
+{
+	std::ofstream writeFile;
+
+	writeFile.open("score.txt");
+
+	if (writeFile.is_open())
+	{
+		int nowScore = elapsed_time.count() / 100;
+
+		if (nowScore > g_dino.GetBestScore())
+		{
+			std::string str = std::to_string(nowScore);
+			writeFile.write(str.c_str(), str.size());
+		}
+		
+		writeFile.close();
+	}
+}
+
+void LoadScore()
+{
+	std::ifstream readFile;
+	readFile.open("score.txt");
+
+	if (readFile.is_open())
+	{
+
+		std::string tmp;
+		std::getline(readFile, tmp);
+
+
+		int bestScore = stoi(tmp);
+
+
+		if (isdigit(bestScore) != 0)
+		{
+			g_dino.SetBestScore(bestScore);
+			wsprintfW(BestScore, L"HI %d", bestScore);
+		}
+
+		else
+			wsprintfW(BestScore, L"Error");
+		
+		readFile.close();
+	}
+}
 
 void CheckCollision(HWND hWnd)
 {
@@ -357,6 +412,7 @@ void DrawObj(HWND hWnd, HBITMAP* hBitMap, HINSTANCE* hInst)
 	elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(EndTime - StartTime);
 	wsprintf(ElapsedTime, L"%d", elapsed_time.count()/100);
 	TextOut(hMemDC, OBJ_COOR::END_X - 50, OBJ_COOR::END_Y-120, ElapsedTime, lstrlen(ElapsedTime));
+	TextOut(hMemDC, OBJ_COOR::END_X - 150, OBJ_COOR::END_Y-120, BestScore, lstrlen(BestScore));
 
 	SelectObject(hMemDC, OldBitMap);
 	DeleteObject(OldBitMap);

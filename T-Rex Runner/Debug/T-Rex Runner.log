@@ -1,5 +1,7 @@
 ﻿  OnGame.cpp
-  T-Rex Runner.cpp
-  코드를 생성하고 있습니다...
-OnGame.obj : error LNK2019: "void __cdecl SaveScore(void)" (?SaveScore@@YAXXZ)"void __cdecl CheckCollision(struct HWND__ *)" (?CheckCollision@@YAXPAUHWND__@@@Z) 함수에서 참조되는 확인할 수 없는 외부 기호
-C:\Users\User\source\repos\T-Rex Runner\Debug\T-Rex Runner.exe : fatal error LNK1120: 1개의 확인할 수 없는 외부 참조입니다.
+C:\Users\User\source\repos\T-Rex Runner\T-Rex Runner\OnGame.cpp(187,16): warning C4244: '초기화 중': '_Rep'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+          with
+          [
+              _Rep=__int64
+          ]
+  T-Rex Runner.vcxproj -> C:\Users\User\source\repos\T-Rex Runner\Debug\T-Rex Runner.exe
