@@ -99,7 +99,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 HBITMAP DinoBitMap;
 HBITMAP DinoBitMapBend;
-
+bool set = false;
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -140,8 +140,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         GetClientRect(hWnd, &crt);
         hMemDC = CreateCompatibleDC(hdc);
-        DinoBitMap = LoadBitmap(hInst, MAKEINTRESOURCE(Dino));
-        DinoBitMapBend = LoadBitmap(hInst, MAKEINTRESOURCE(DinoBend));
+
+        if (set == false)
+        {
+            DinoBitMap = LoadBitmap(hInst, MAKEINTRESOURCE(Dino));
+            DinoBitMapBend = LoadBitmap(hInst, MAKEINTRESOURCE(DinoBend));
+
+            set = true;
+        }
+        
 
         OldBitMap = (HBITMAP)SelectObject(hMemDC, hBitMap); // MAP
         BitBlt(hdc, 0, 0, crt.right, crt.bottom, hMemDC, 0, 0, SRCCOPY);
@@ -150,8 +157,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         SelectObject(hMemDC, OldBitMap);
         DeleteObject(OldBitMap);
-        DeleteObject(DinoBitMap);
-        DeleteObject(DinoBitMapBend);
+        //DeleteObject(DinoBitMap);
+        //DeleteObject(DinoBitMapBend);
         DeleteDC(hMemDC);
 
         EndPaint(hWnd, &ps);

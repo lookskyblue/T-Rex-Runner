@@ -17,7 +17,7 @@ enum DINO_COOR { DINO_START_X = 100, DINO_START_Y = 177, WIDTH  = 65, HEIGHT = 1
 #define SPEED_UP_NUMBER 3
 #define SPEED_UP_CALL_GAP 20000
 #define FIRST_MOVE_SPEED 5
-#define FRAME_SPEED 5
+#define FRAME_SPEED 1
 #define AGAIN 0
 
 class GameObj {
